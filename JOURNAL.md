@@ -1,23 +1,26 @@
 # Contribution Journal
 
-## Setup — 2026-07-15
+## Week 7 — Issue selection
 
-- Forked and cloned `pathreview`, added `upstream` remote pointing to `ascherj/pathreview`.
-- Installed prerequisites on Windows: `make` (GnuWin32) and Docker Desktop.
-- Ran `docker compose up -d`, `make setup`, and `make run`; confirmed the app loads at
-  http://localhost:5173 with the API at http://localhost:8000.
+**Issue link:** [https://github.com/ascherj/pathreview/issues/158](https://github.com/ascherj/pathreview/issues/158)
 
-## Issue — #158
+**Issue title:** review_service unit tests misconfigure async mocks — 13 of 19 tests fail
 
-Claimed [issue #158](https://github.com/ascherj/pathreview/issues/158): `review_service`
-unit tests misconfigure async mocks, causing 13 of 19 tests in
-`tests/unit/test_review_service.py` to fail.
+**Tier:** [x] Tier 1  [ ] Tier 2  [ ] Tier 3
 
-Reproduced locally: `pytest tests/unit/test_review_service.py -v -m unit` → 13 failed, 6 passed,
-matching the issue description exactly.
+**Problem summary:**
+The unit tests for `core/services/review_service.py` build their fake database result as
+`AsyncMock()`, which means every attribute pulled off of it — including `.scalars()` — is
+also automatically treated as async. Since `.scalars()` is actually a synchronous call in
+SQLAlchemy's async API, calling it on the mock returns a coroutine object instead of a
+result object, and that coroutine has no `.first()` or `.all()` method, so 13 of the 19
+tests in `tests/unit/test_review_service.py` fail with `AttributeError`. The service code
+itself in `core/services/review_service.py` is correct and does not need to change — only
+the test mocks do. A successful fix rebuilds the mocked result object as a plain `Mock`/
+`MagicMock` (keeping `AsyncMock` only on the awaited `db.execute` call) so all 19 tests pass.
 
-Plan: the tests build `mock_result = AsyncMock()`, so `mock_result.scalars` is auto-created as
-an `AsyncMock` too, and calling `mock_result.scalars()` returns a coroutine instead of a plain
-object. Fix by keeping `AsyncMock` only on `db.execute` (which is genuinely awaited) and using a
-plain `Mock`/`MagicMock` for the `Result` object it returns, so `.scalars().first()` /
-`.scalars().all()` work synchronously as they do in real SQLAlchemy async sessions.
+**Branch name:** fix/158-review-service-async-mocks
+
+**Setup confirmation:** [x] App runs locally at localhost:5173
+
+**Cohort ledger:** [ ] Issue added to cohort ledger
