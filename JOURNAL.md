@@ -19,6 +19,34 @@ itself in `core/services/review_service.py` is correct and does not need to chan
 the test mocks do. A successful fix rebuilds the mocked result object as a plain `Mock`/
 `MagicMock` (keeping `AsyncMock` only on the awaited `db.execute` call) so all 19 tests pass.
 
+**Selection notes ("Is this right for me?" checklist reasoning):**
+
+*Part 1 — Understanding the issue:* Confirmed I could restate the bug without looking at the
+issue body: the tests fake the DB result with `AsyncMock()`, so `.scalars()` on it returns a
+coroutine instead of a plain object, breaking `.first()`/`.all()`. Verified this is real by
+running `pytest tests/unit/test_review_service.py -v -m unit` myself — got 13 failed, 6 passed,
+matching the issue exactly. Confirmed the affected file (`tests/unit/test_review_service.py`)
+exists and read the whole thing, plus the service module it tests
+(`core/services/review_service.py`), so I know the fix is test-only.
+
+*Part 2 — Tier fit:* This is my first time working in a codebase this size, so I deliberately
+stayed in Tier 1 rather than reaching for a Tier 2/3 issue to "challenge myself." I also looked
+at issue #119 (Tier 2, docstrings across 3 files in `core/services/`) as a comparison — it's a
+reasonable issue but a bigger, more diffuse scope (4–6 hrs, subjective "done" criteria across
+multiple files) than #158's single-file, objectively-verifiable fix (tests pass or they don't).
+
+*Part 3 — Codebase readiness:* Read `create_review`, `get_review`, and `list_reviews` in
+`review_service.py` along with every test in `test_review_service.py`, including the shared
+`mock_db_session` fixture and how individual tests override it. I can already sketch the fix:
+replace each test's `mock_result = AsyncMock()` with a plain `Mock()`/`MagicMock()`, keeping
+`AsyncMock` only where `db.execute` itself is awaited.
+
+*Part 4 — Scope and time:* Checked the issue's comments and the cohort ledger before claiming —
+#158 had only 2 prior claims, versus 5–11 on most other open Tier-1 issues (e.g. #146, #147,
+#154, #155), so it's comparatively uncrowded. No `blocked by` references in the issue. Estimated
+2–3 hours given the fix is a mechanical, repeated pattern across ~13 tests — comfortably within
+the Week 8–9 window alongside my other coursework.
+
 **Branch name:** fix/158-review-service-async-mocks
 
 **Setup confirmation:** [x] App runs locally at localhost:5173
