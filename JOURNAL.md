@@ -53,9 +53,32 @@ the Week 8–9 window alongside my other coursework.
 
 **Cohort ledger:** [ ] Issue added to cohort ledger
 
-## Week 8 — Reproduction and solution plan
+## Week 8 — Reproduction & solution planning
 
-**Reproduction steps:**
+**Reproduction commit link:** [9cc2587](https://github.com/Aqureshi106/pathreview/commit/9cc25872e8c4bf9d0e0dc39c794790a51942d66a)
+
+**Reproduction summary:**
+Ran `python -m pytest tests/unit/test_review_service.py -v -m unit` and got **13 failed, 6
+passed**, matching the issue exactly, with both failure signatures present:
+`AttributeError: 'coroutine' object has no attribute 'first'` (from `get_review`, at
+`core/services/review_service.py:47`) and `'...has no attribute 'all'` (from `list_reviews`, at
+line 65). Root cause: every failing test mocks the `db.execute()` return value as
+`mock_result = AsyncMock()`, which makes `.scalars()` itself resolve to an async attribute and
+return a coroutine instead of a plain result object — `core/services/review_service.py` is
+correct and doesn't need to change.
+
+**PLAN.md link:** [PLAN.md](https://github.com/Aqureshi106/pathreview/blob/fix/158-review-service-async-mocks/PLAN.md)
+
+**Walkthrough video (recommended):** Not recorded yet.
+
+**Blockers or open questions:**
+None blocking. Open question for Week 9: whether to use `Mock()` or `MagicMock()` as the
+replacement — leaning `MagicMock` for consistency with other fixtures in the file, but will
+confirm against `docs/CONTRIBUTING.md` conventions before implementing (see PLAN.md Risks &
+Unknowns #1).
+
+<details>
+<summary>Detailed reproduction steps (expand)</summary>
 
 1. From the repo root, ran:
    ```
@@ -77,8 +100,6 @@ the Week 8–9 window alongside my other coursework.
    is genuinely awaited (real SQLAlchemy async sessions), but `result.scalars()` is a synchronous
    call on the result object. The bug is entirely in how the tests fake that result.
 
-**Where the reproduction is recorded:** this JOURNAL.md entry (steps above) plus the full pytest
-output showing `13 failed, 6 passed` was reviewed interactively; no source files were modified to
-reproduce the bug since it reproduces on the current `main`/branch state as-is.
+No source files were modified to reproduce the bug — it reproduces on the branch as-is.
 
-**Solution plan:** see [PLAN.md](PLAN.md).
+</details>
