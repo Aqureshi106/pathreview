@@ -124,10 +124,11 @@ The verification is that all 19 pre-existing tests pass, not a new test case.
    in the file, which already use `Mock()` for leaf objects — I'll double check during
    implementation whether the codebase's convention (per `docs/CONTRIBUTING.md` and other test
    files in `tests/unit/`) prefers one over the other, and match it.
-2. **Other test files might have the same pattern.** Since this is a copy-paste-style mistake, it's
-   possible other files in `tests/unit/` mock a `db.execute()` result the same broken way. I'll
-   grep for `mock_result = AsyncMock()` across `tests/unit/` before finishing, and flag (but not
-   necessarily fix, unless in scope) any other occurrences I find.
+2. **Other test files might have the same pattern.** Since this is a copy-paste-style mistake, it
+   seemed possible other files in `tests/unit/` mock a `db.execute()` result the same broken way.
+   Checked with `grep -rn "mock_result = AsyncMock()" tests/unit/` — the only match is
+   `tests/unit/test_review_service.py`, so this fix is confirmed self-contained; no other test
+   file needs the same change.
 3. **`test_list_reviews_page_2_returns_correct_offset` currently passes despite being logically
    thin** — it only asserts `len(calls) > 0`, not that the offset was actually computed correctly.
    Fixing the mock might be a good moment to ask whether this test should be strengthened, but
