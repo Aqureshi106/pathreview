@@ -52,3 +52,33 @@ the Week 8–9 window alongside my other coursework.
 **Setup confirmation:** [x] App runs locally at localhost:5173
 
 **Cohort ledger:** [ ] Issue added to cohort ledger
+
+## Week 8 — Reproduction and solution plan
+
+**Reproduction steps:**
+
+1. From the repo root, ran:
+   ```
+   python -m pytest tests/unit/test_review_service.py -v -m unit
+   ```
+2. Result: **13 failed, 6 passed** — matches the issue report and my Week 7 restatement exactly.
+3. Confirmed both failure signatures named in the issue:
+   - `get_review` tests fail with `AttributeError: 'coroutine' object has no attribute 'first'`
+     at `core/services/review_service.py:47` (`result.scalars().first()`).
+   - `list_reviews` tests fail with `AttributeError: 'coroutine' object has no attribute 'all'`
+     at `core/services/review_service.py:65` (`count_result.scalars().all()`).
+4. Root cause confirmed by reading `tests/unit/test_review_service.py`: every failing test builds
+   `mock_result = AsyncMock()`. Because `AsyncMock` treats *every* attribute access as async by
+   default, `mock_result.scalars` resolves to an `AsyncMock` too, so calling `.scalars()` returns
+   a coroutine instead of a plain result object — and that coroutine has no `.first()`/`.all()`.
+   The 6 passing tests (`test_create_review_*`, `test_review_sections_and_score_initially_none`)
+   never touch `.scalars()`, which is why they're unaffected.
+5. Confirmed `core/services/review_service.py` itself is correct and needs no change — `db.execute`
+   is genuinely awaited (real SQLAlchemy async sessions), but `result.scalars()` is a synchronous
+   call on the result object. The bug is entirely in how the tests fake that result.
+
+**Where the reproduction is recorded:** this JOURNAL.md entry (steps above) plus the full pytest
+output showing `13 failed, 6 passed` was reviewed interactively; no source files were modified to
+reproduce the bug since it reproduces on the current `main`/branch state as-is.
+
+**Solution plan:** see [PLAN.md](PLAN.md).
