@@ -69,7 +69,7 @@ correct and doesn't need to change.
 
 **PLAN.md link:** [PLAN.md](https://github.com/Aqureshi106/pathreview/blob/fix/158-review-service-async-mocks/PLAN.md)
 
-**Walkthrough video (recommended):** Not recorded yet.
+**Walkthrough video (recommended):** [Loom walkthrough](https://www.loom.com/share/16b338bf6a57429389a21bdaa9dcb0bc) — reproduces the failure locally and walks through the planned fix.
 
 **Blockers or open questions:**
 None blocking. Open question for Week 9: whether to use `Mock()` or `MagicMock()` as the
