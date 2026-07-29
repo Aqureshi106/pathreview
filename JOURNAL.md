@@ -142,12 +142,19 @@ result object. Rebuilt those mocks as plain `Mock()`, matching how `db.execute()
 awaited in `core/services/review_service.py` (which needed no changes).
 
 **Tests added or updated:**
-`tests/unit/test_review_service.py` — updated 13 existing tests' mock construction, plus fixed
-one test's assertion (`test_list_reviews_ordered_by_created_at`) that the mock fix revealed was
-checking the wrong thing. No new test file or new test function was added: per PLAN.md, this
-issue doesn't change `review_service.py`'s behavior, so the fixed mocks in the 13 existing tests
-are themselves the regression coverage — reverting the mock fix makes them fail again
-immediately.
+`tests/unit/test_review_service.py` — fixed the mock construction in all 13 tests that mock
+`db.execute()`'s return value, so they now actually exercise the behavior they assert on instead
+of failing before reaching it. Collectively these tests cover: `get_review` returning the
+correct `Review` for the owning user and `None` for a non-owning user
+(`test_get_review_returns_review_for_correct_owner`, `test_get_review_returns_none_for_wrong_user`),
+`get_review`'s join/ownership-filter query shape, and `list_reviews`'s pagination (page 1 vs.
+page 2 offsets, default vs. custom page size), total-count calculation, and
+created-at-descending ordering. Also fixed `test_list_reviews_ordered_by_created_at`'s
+assertion, which the mock fix revealed was checking the wrong thing (asserting one `execute()`
+call when `list_reviews` genuinely makes two). No new test function was added: per PLAN.md, this
+issue doesn't change `review_service.py`'s behavior, so these now-fixed 13 tests are themselves
+the regression coverage — reverting the mock fix makes them fail again immediately with the
+original `AttributeError`.
 
 **Self-review confirmation:** [x] make check passes  [x] make test-unit passes
 (both in the "introduces no new failures" sense — see the pre-existing-failures documentation
