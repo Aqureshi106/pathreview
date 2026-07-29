@@ -104,7 +104,61 @@ No source files were modified to reproduce the bug — it reproduces on the bran
 
 </details>
 
-## Week 9 — Implementation & self-review
+## Week 9 — Solution building & PR submission
+
+### Check-in 1 (mid-week)
+
+**Current progress:**
+Implemented the full PLAN.md fix: replaced `mock_result = AsyncMock()` with `mock_result =
+Mock()` in all 13 affected tests in `tests/unit/test_review_service.py` (PLAN.md steps 1-2),
+and found/fixed one additional issue the mock fix surfaced in
+`test_list_reviews_ordered_by_created_at` (see "Deviation from PLAN.md" below). All 19 tests in
+the file pass; verified the fix doesn't regress the rest of the unit suite (PLAN.md steps 5-6).
+
+**Next steps:**
+Run `make check` end to end, finalize the PR description against `docs/CONTRIBUTING.md` and the
+pathreview PR-description guide, open the PR, and get mentor feedback before marking it ready
+for review.
+
+**Blockers:**
+None. One process note, not a blocker: the repo's pre-commit `mypy` hook is scoped more broadly
+than `make typecheck` and flags pre-existing, unrelated issues in this test file — documented
+below and in the PR's Notes for Reviewers rather than fixed, since fixing them is out of scope
+for this issue.
+
+---
+
+### Check-in 2 (end of week)
+
+**PR link:** [Aqureshi106/pathreview#1](https://github.com/Aqureshi106/pathreview/pull/1)
+
+**Branch:** `fix/158-review-service-async-mocks`
+
+**What you built:**
+Fixed 13 of 19 unit tests in `tests/unit/test_review_service.py` that were failing because they
+mocked `db.execute()`'s return value with `AsyncMock()`, which makes every attribute access
+(including `.scalars()`) resolve async and return an un-callable coroutine instead of a plain
+result object. Rebuilt those mocks as plain `Mock()`, matching how `db.execute()` is actually
+awaited in `core/services/review_service.py` (which needed no changes).
+
+**Tests added or updated:**
+`tests/unit/test_review_service.py` — updated 13 existing tests' mock construction, plus fixed
+one test's assertion (`test_list_reviews_ordered_by_created_at`) that the mock fix revealed was
+checking the wrong thing. No new test file or new test function was added: per PLAN.md, this
+issue doesn't change `review_service.py`'s behavior, so the fixed mocks in the 13 existing tests
+are themselves the regression coverage — reverting the mock fix makes them fail again
+immediately.
+
+**Self-review confirmation:** [x] make check passes  [x] make test-unit passes
+(both in the "introduces no new failures" sense — see the pre-existing-failures documentation
+below and in the PR's Notes for Reviewers; this repo has pre-existing, unrelated lint/type/test
+failures that predate this branch)
+
+**Draft PR feedback received from:** mentor
+
+---
+
+### Implementation details
 
 **Implementation summary:**
 Followed PLAN.md exactly for the mechanical part: replaced `mock_result = AsyncMock()` with
