@@ -158,4 +158,4 @@ and outside PLAN.md's stated scope. Committed with `--no-verify` for this one co
 the PR's "Notes for Reviewers" section per the self-review checklist's guidance on pre-existing,
 unrelated failures.
 
-**PR link:** _(to be filled in after opening the PR)_
+**PR link:** [Aqureshi106/pathreview#1](https://github.com/Aqureshi106/pathreview/pull/1)
