@@ -220,3 +220,71 @@ the PR's "Notes for Reviewers" section per the self-review checklist's guidance 
 unrelated failures.
 
 **PR link:** [Aqureshi106/pathreview#1](https://github.com/Aqureshi106/pathreview/pull/1)
+
+## Week 10 — Iteration & reflection
+
+### Reviewer feedback
+
+**Feedback received:** [ ] Yes  [x] No — still awaiting review
+
+**Summary of feedback:**
+No review activity on [PR #1](https://github.com/Aqureshi106/pathreview/pull/1) as of this
+entry — `gh pr view 1 --json comments,reviews` returns empty arrays for both. The only feedback
+in this cycle was the mentor's draft-PR pass referenced in Week 9, which I already incorporated
+before marking the PR ready for review.
+
+**How you responded:**
+N/A — nothing new to respond to. Left the PR open and did not ping for review, since the
+assignment window doesn't call for that and the mentor's Week 9 pass already covered the
+substantive check.
+
+---
+
+### Reflection
+
+**What was harder than you expected?**
+Not the fix itself — that was mechanical once I'd read the tests closely. The harder part was
+resisting the urge to "clean up" things adjacent to the bug. `test_list_reviews_ordered_by_created_at`
+had a second, real bug (asserting `execute.assert_called_once()` when the service calls it
+twice), and the pre-commit mypy hook surfaced 28 unrelated type errors the moment I touched the
+file. Both were real temptations to scope-creep. Deciding what counted as "part of the fix"
+(the `assert_called_once` bug — yes, it was masked by the same root cause) versus "out of scope"
+(annotating 28 untyped test functions — no, that's a different issue entirely) took more
+judgment than the actual mock-construction change did. Writing that reasoning down in PLAN.md
+before touching code is what made the boundary defensible later instead of something I was
+guessing about mid-fix.
+
+**What did you learn about working in a large codebase?**
+The tooling doesn't agree with itself, and that's normal, not a sign something's broken. `make
+check`, `make typecheck`, and the raw pre-commit hook all scope their checks differently, so
+"does this pass CI" isn't one boolean — it's several, and a contributor's job is to know which
+one is authoritative for the thing they touched and to document the others as pre-existing
+rather than silently ignoring them or panicking and fixing everything in sight. In a solo
+project there's no equivalent to "these 40 test failures predate my branch" — you just fix
+things. Here, proving that via `git stash` and a before/after count was the only way to make an
+honest claim about what my change did and didn't affect.
+
+**How did AI tools help — and where did they fall short?**
+AI assistance was most useful for the mechanical, verifiable parts: scanning all 13 tests for
+the `AsyncMock()` pattern, drafting the repeated edits consistently, and running the
+verification commands (pytest, ruff, black, mypy, git stash comparisons) accurately and
+quickly. It fell short on judgment calls that needed project-specific context no tool could
+infer — whether `Mock()` or `MagicMock()` matched this file's convention (settled by reading the
+other fixtures, not by asking), whether the `assert_called_once` fix was in-scope, and whether
+28 mypy errors were worth blocking a commit over. Those needed me reading the actual file and
+making a call, then writing the reasoning down so a reviewer (or future me) could check it.
+
+**What would you do differently if you started over?**
+I'd spend less time re-verifying already-obvious things (I reran the full test suite standalone
+and inside the full-directory run "to confirm no cross-test state dependency" when the tests
+don't share state) and more time upfront reading `docs/CONTRIBUTING.md` for mock-style
+conventions before implementing, instead of resolving that open question empirically at
+implementation time. Front-loading that would have removed the one open question I carried from
+Week 8 into Week 9.
+
+**What are you most proud of from this module?**
+Catching the second bug in `test_list_reviews_ordered_by_created_at` and not just silently
+fixing it — writing down in the PR *why* it was a justified deviation from PLAN.md's stated
+scope ("only mock construction changes"), rather than either ignoring it or quietly expanding
+scope without flagging it. That distinction — fix what the issue is about, name explicitly what
+else you touched and why — is the habit I want to carry into future contributions.
